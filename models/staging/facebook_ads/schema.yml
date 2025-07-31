@@ -1,0 +1,617 @@
+version: 2
+
+models:
+
+  - name: stg_facebook_ads__campaigns
+    description: Cleaned and standardized Facebook Ads campaign data with account hierarchy and metadata
+    columns:
+      - name: campaign_key
+        description: Surrogate key for the campaign (generated from campaign_id)
+        tests:
+          - not_null
+          - unique
+
+      - name: account_key
+        description: Foreign key to accounts table (generated from account_id)
+        tests:
+          - not_null
+
+      - name: campaign_id
+        description: Facebook Campaign ID - unique identifier for the campaign
+        tests:
+          - not_null
+          - unique
+
+      - name: account_id
+        description: Facebook Ad Account ID - parent account identifier
+        tests:
+          - not_null
+
+      - name: campaign_name_clean
+        description: Cleaned and standardized campaign name with consistent formatting
+        tests:
+          - not_null
+
+      - name: campaign_name_raw
+        description: Original campaign name as provided by the source system
+        tests:
+          - not_null
+
+      - name: campaign_objective_clean
+        description: Standardized campaign objective with consistent naming
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Lead Generation', 'Conversions', 'Traffic', 'Brand Awareness', 'Reach', 'Video Views', 'Messages', 'App Installs', 'Event Responses', 'Link Clicks', 'Local Awareness', 'Offer Claims', 'Page Likes', 'Post Engagement', 'Product Catalog Sales', 'Store Visits', 'Unknown']
+
+      - name: campaign_objective_raw
+        description: Original campaign objective from source data
+        tests:
+          - not_null
+
+      - name: campaign_status_clean
+        description: Standardized campaign status derived from effective and configured status
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['ACTIVE', 'PAUSED', 'ARCHIVED', 'SCHEDULED', 'UNDER_REVIEW', 'REJECTED', 'ERROR', 'DRAFT', 'COMPLETED', 'UNKNOWN']
+
+      - name: campaign_effective_status
+        description: Facebook's effective campaign status (actual current status)
+        tests:
+          - not_null
+
+      - name: campaign_configured_status
+        description: Facebook's configured campaign status (user-set status)
+        tests:
+          - not_null
+
+      - name: campaign_bid_strategy
+        description: Bidding strategy used for the campaign
+        tests:
+          - not_null
+
+      - name: campaign_buying_type
+        description: Campaign buying type (auction vs reservation)
+        tests:
+          - not_null
+
+      - name: campaign_special_ad_category
+        description: Special ad category if applicable (e.g., political, housing)
+
+      - name: campaign_daily_budget
+        description: Daily budget limit for the campaign in account currency (FLOAT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: true
+
+      - name: campaign_lifetime_budget
+        description: Lifetime budget limit for the campaign in account currency (FLOAT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: true
+
+      - name: campaign_budget_remaining
+        description: Remaining budget for the campaign in account currency (FLOAT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: true
+
+      - name: campaign_spend_cap
+        description: Spend cap limit for the campaign in account currency (FLOAT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: true
+
+      - name: amount_spent
+        description: Total amount spent on the campaign in account currency (derived from spend field) (FLOAT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: true
+
+      - name: total_cost
+        description: Total cost of the campaign in account currency (derived from totalcost field) (FLOAT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: true
+
+      - name: campaign_created_time
+        description: Timestamp when the campaign was created
+        tests:
+          - not_null
+
+      - name: campaign_start_time
+        description: Timestamp when the campaign is scheduled to start
+
+      - name: campaign_stop_time
+        description: Timestamp when the campaign is scheduled to stop
+
+      - name: is_test_campaign
+        description: Boolean flag indicating if this appears to be a test campaign based on naming patterns
+        tests:
+          - not_null
+
+      - name: campaign_name_quality_flag
+        description: Data quality assessment of the campaign name
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Valid', 'Missing Name', 'Numeric Only', 'Too Short']
+
+      - name: budget_type
+        description: Classification of budget type used by the campaign
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Daily Budget', 'Lifetime Budget', 'Both Budgets', 'No Budget Set']
+
+      - name: _dbt_loaded_at
+        description: Timestamp when the record was processed by dbt
+        tests:
+          - not_null
+
+    tests:
+      # Primary grain uniqueness test
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - campaign_id
+          name: unique_campaign_grain
+      
+      # Account hierarchy validation
+      - dbt_utils.expression_is_true:
+          expression: "account_id is not null and account_id != ''"
+          name: account_hierarchy_valid
+      
+      # Budget consistency tests
+      - dbt_utils.expression_is_true:
+          expression: "campaign_budget_remaining <= greatest(coalesce(campaign_daily_budget, 0), coalesce(campaign_lifetime_budget, 0)) or (campaign_daily_budget = 0 and campaign_lifetime_budget = 0)"
+          name: budget_remaining_logical
+      
+      # Date logic validation
+      - dbt_utils.expression_is_true:
+          expression: "campaign_start_time is null or campaign_stop_time is null or campaign_start_time <= campaign_stop_time"
+          name: campaign_date_logic
+      
+      # Spend validation
+      - dbt_utils.expression_is_true:
+          expression: "amount_spent >= 0 and total_cost >= 0"
+          name: spend_amounts_positive
+
+      # Boolean field validation
+      - dbt_utils.expression_is_true:
+          expression: "is_test_campaign in (true, false)"
+          name: is_test_campaign_boolean_values
+
+
+  - name: stg_facebook_ads__ads
+    description: Cleaned and standardized Facebook Ads ad-level data with creative information and hierarchy
+    columns:
+      - name: ad_key
+        description: Surrogate key for the ad (generated from ad_id)
+        tests:
+          - not_null
+          - unique
+
+      - name: adset_key
+        description: Foreign key to adsets table (generated from adset_id)
+        tests:
+          - not_null
+
+      - name: account_key
+        description: Foreign key to accounts table (generated from actor_id)
+        tests:
+          - not_null
+
+      - name: ad_id
+        description: Facebook Ad ID - unique identifier for the ad
+        tests:
+          - not_null
+          - unique
+
+      - name: adset_id
+        description: Facebook Ad Set ID - parent adset identifier
+        tests:
+          - not_null
+
+      - name: account_id
+        description: Facebook Ad Account ID - parent account identifier (derived from actor_id)
+        tests:
+          - not_null
+
+      - name: ad_name_clean
+        description: Cleaned and standardized ad name with consistent formatting
+        tests:
+          - not_null
+
+      - name: ad_name_raw
+        description: Original ad name as provided by the source system
+        tests:
+          - not_null
+
+      - name: ad_status_clean
+        description: Standardized ad status
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['ACTIVE', 'PAUSED', 'ARCHIVED', 'SCHEDULED', 'UNDER_REVIEW', 'REJECTED', 'ERROR', 'DRAFT', 'COMPLETED', 'UNKNOWN']
+
+      - name: ad_status_raw
+        description: Original ad status as provided by the source system
+        tests:
+          - not_null
+
+      - name: ad_object_type
+        description: Type of ad object
+
+      - name: ad_created_time
+        description: Timestamp when the ad was created
+
+      - name: ad_title_clean
+        description: Cleaned ad title/headline with consistent formatting
+
+      - name: ad_title_raw
+        description: Original ad title from source data
+
+      - name: ad_body_clean
+        description: Cleaned ad body text with consistent formatting
+
+      - name: ad_body_raw
+        description: Original ad body text from source data
+
+      - name: ad_link
+        description: Ad link
+
+      - name: ad_link_url
+        description: Ad destination URL
+
+      - name: ad_thumbnail_url
+        description: Ad thumbnail image URL
+
+      - name: facebook_permalink_url
+        description: Facebook permalink for the ad
+
+      - name: instagram_permalink_url
+        description: Instagram permalink for the ad
+
+      - name: website_destination_url
+        description: Website destination URL
+
+      - name: desktop_feed_standard_preview_url
+        description: Desktop feed preview URL
+
+      - name: facebook_story_mobile_preview_url
+        description: Facebook story mobile preview URL
+
+      - name: instagram_standard_preview_url
+        description: Instagram standard preview URL
+
+      - name: instagram_story_preview_url
+        description: Instagram story preview URL
+
+      - name: campaign_name_raw
+        description: Campaign name for reference
+
+      - name: adset_name_raw
+        description: Ad set name for reference
+
+      - name: url_tags
+        description: URL tags/parameters
+
+      - name: source_instagram_media_id
+        description: Source Instagram media ID
+
+      - name: instagram_actor_id
+        description: Instagram actor ID
+
+      - name: is_test_ad
+        description: Boolean flag indicating if this appears to be a test ad based on naming patterns
+        tests:
+          - not_null
+
+      - name: ad_name_quality_flag
+        description: Data quality assessment of the ad name
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Valid', 'Missing Name', 'Numeric Only', 'Too Short']
+
+      - name: creative_content_type
+        description: Classification of creative content availability
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Title and Body', 'Title Only', 'Body Only', 'No Title or Body']
+
+      - name: has_destination_url
+        description: Boolean flag indicating if ad has a destination URL
+        tests:
+          - not_null
+
+      - name: has_social_permalink
+        description: Boolean flag indicating if ad has social media permalinks
+        tests:
+          - not_null
+
+      - name: has_thumbnail
+        description: Boolean flag indicating if ad has a thumbnail image
+        tests:
+          - not_null
+
+      - name: _dbt_loaded_at
+        description: Timestamp when the record was processed by dbt
+        tests:
+          - not_null
+
+    tests:
+      # Primary grain uniqueness test
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - ad_id
+          name: unique_ad_grain
+      
+      # Hierarchy validation
+      - dbt_utils.expression_is_true:
+          expression: "account_id is not null and account_id != ''"
+          name: ad_account_hierarchy_valid
+      
+      - dbt_utils.expression_is_true:
+          expression: "adset_id is not null and adset_id != ''"
+          name: ad_adset_hierarchy_valid
+
+      # Boolean field validation
+      - dbt_utils.expression_is_true:
+          expression: "is_test_ad in (true, false)"
+          name: is_test_ad_boolean_values
+
+      - dbt_utils.expression_is_true:
+          expression: "has_destination_url in (true, false)"
+          name: has_destination_url_boolean_values
+
+      - dbt_utils.expression_is_true:
+          expression: "has_social_permalink in (true, false)"
+          name: has_social_permalink_boolean_values
+
+      - dbt_utils.expression_is_true:
+          expression: "has_thumbnail in (true, false)"
+          name: has_thumbnail_boolean_values
+
+
+  - name: stg_facebook_ads__insights
+    description: Cleaned and standardized Facebook Ads performance data from Windsor.ai with data quality filtering
+    tests:
+      # Business logic tests
+      - dbt_utils.expression_is_true:
+          expression: "clicks <= impressions or impressions = 0"
+          name: clicks_not_exceed_impressions
+      
+      - dbt_utils.expression_is_true:
+          expression: "reach <= impressions or reach = 0 or impressions = 0"
+          name: reach_not_exceed_impressions
+      
+      - dbt_utils.expression_is_true:
+          expression: "spend >= 0 and clicks >= 0 and impressions >= 0"
+          name: metrics_non_negative
+      
+      - dbt_utils.expression_is_true:
+          expression: "frequency >= 1.0 or frequency = 0.0 or reach = 0"
+          name: frequency_logical_minimum
+      
+      - dbt_utils.expression_is_true:
+          expression: "click_through_rate <= 100.0"
+          name: ctr_within_bounds
+    
+      # Primary grain uniqueness test using surrogate key
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - date_day
+            - account_id
+            - campaign_id
+            - ad_id
+          name: unique_insights_grain
+      
+      # Calculated field validation tests
+      - dbt_utils.expression_is_true:
+          expression: "(cost_per_conversion is null and conversions = 0) or (cost_per_conversion is not null and conversions > 0)"
+          name: cost_per_conversion_consistency
+      
+      - dbt_utils.expression_is_true:
+          expression: "return_on_ad_spend is null or (spend > 0.0 and conversion_value is not null and abs(return_on_ad_spend - (conversion_value / spend)) < 0.01)"
+          name: return_on_ad_spend_consistency
+
+      - dbt_utils.expression_is_true:
+          expression: "cost_per_conversion is null or (cost_per_conversion >= 0 and conversions > 0)"
+          name: cost_per_conversion_logic_check
+      
+      - dbt_utils.expression_is_true:
+          expression: "return_on_ad_spend is null or (return_on_ad_spend >= 0 and spend > 0)"
+          name: return_on_ad_spend_logic_check
+      
+      # Data quality flag validation
+      - dbt_utils.expression_is_true:
+          expression: "data_quality_flag = 'Valid'"
+          name: only_valid_records_in_final_output
+
+    
+    columns:
+      - name: insights_key
+        description: Surrogate key generated from the grain (date, account_id, campaign_id, ad_id) to ensure unique record identification
+        tests:
+          - not_null
+          - unique
+
+      - name: date_day
+        description: Report date for the advertising metrics
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: "'2020-01-01'"
+              max_value: "current_date()"
+
+      - name: account_id
+        description: Facebook Ad Account ID - unique identifier for the advertising account
+        tests:
+          - not_null
+
+      - name: account_name
+        description: Business Manager account name - human-readable account identifier
+        tests:
+          - not_null
+
+      - name: account_currency
+        description: Three-letter currency code for the advertising account (e.g., USD, EUR, GBP)
+        tests:
+          - not_null
+
+      - name: campaign_id
+        description: Facebook Campaign ID - unique identifier for the campaign
+        tests:
+          - not_null
+
+      - name: campaign_name
+        description: Campaign name - human-readable campaign identifier
+        tests:
+          - not_null
+
+      - name: campaign_objective
+        description: Standardized Facebook campaign objective (Lead Generation, Conversions, etc.)
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Lead Generation', 'Conversions', 'Traffic', 'Brand Awareness', 'Reach', 'Video Views', 'Messages', 'App Installs', 'Event Responses', 'Link Clicks', 'Local Awareness', 'Offer Claims', 'Outcome App Promotion', 'Outcome Awareness', 'Outcome Engagement', 'Outcome Leads', 'Outcome Sales', 'Outcome Traffic', 'Page Likes', 'Post Engagement', 'Product Catalog Sales', 'Store Visits', 'Unknown']
+
+      - name: campaign_status
+        description: Current status of the campaign
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['ACTIVE', 'PAUSED', 'ARCHIVED', 'DELETED', 'Unknown']
+
+      - name: ad_id
+        description: Facebook Ad ID - unique identifier for the individual ad
+        tests:
+          - not_null
+
+      - name: ad_name
+        description: Ad name - human-readable ad identifier
+        tests:
+          - not_null
+
+      - name: impressions
+        description: Number of times the ad was displayed (INT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: true
+
+      - name: clicks
+        description: Number of clicks on the ad (INT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: true
+
+      - name: spend
+        description: Amount spent on the ad in account currency (FLOAT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: true
+
+      - name: reach
+        description: Number of unique users who saw the ad (INT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: true
+
+      - name: frequency
+        description: Average number of times each user saw the ad (impressions/reach) (FLOAT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: true
+
+      - name: cost_per_mille
+        description: Cost per 1000 impressions (CPM) (FLOAT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: true
+
+      - name: cost_per_click
+        description: Average cost per click (CPC) (FLOAT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: true
+
+      - name: click_through_rate
+        description: Click-through rate as percentage (clicks/impressions * 100) (FLOAT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              max_value: 100.0
+              inclusive: true
+
+      - name: conversions
+        description: Number of purchase conversions attributed to the ad (INT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: true
+
+      - name: conversion_value
+        description: Total value of purchase conversions in account currency (FLOAT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: true
+
+      - name: cost_per_conversion
+        description: Average cost per conversion (spend/conversions) - calculated field, null when no conversions (FLOAT64)
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: true
+
+      - name: return_on_ad_spend
+        description: Return on ad spend ratio (conversion_value/spend) - calculated field, null when no spend (FLOAT64)
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: true
+
+      - name: data_quality_flag
+        description: Data quality validation flag indicating record validity
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Valid', 'Missing Key Fields', 'Negative Metrics', 'Invalid CTR', 'Invalid Frequency']
+
+      - name: _dbt_loaded_at
+        description: Timestamp when the record was processed by dbt
+        tests:
+          - not_null
+          

@@ -1,0 +1,35 @@
+name: 'facebook_ads_windsor'
+version: '1.0.0'
+config-version: 2
+
+profile: 'facebook_ads_windsor'
+
+model-paths: ["models"]
+analysis-paths: ["analysis"]
+test-paths: ["tests"]
+seed-paths: ["data"]
+macro-paths: ["macros"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  facebook_ads_windsor:
+    staging:
+      +materialized: view
+      facebook_ads:
+        +tags: ["staging", "facebook_ads"]
+    intermediate:
+      +materialized: view
+      facebook_ads:
+        +tags: ["intermediate", "facebook_ads"]
+    marts:
+      +materialized: table
+      facebook_ads:
+        +tags: ["marts", "facebook_ads"]
+
+vars:
+  facebook_ads_source_table: 'windsor-dbt-development.raw_data.facebook_ads_windsor_campaigns'
+  facebook_ads_start_date: '2024-01-01'
