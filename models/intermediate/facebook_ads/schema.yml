@@ -1,0 +1,649 @@
+version: 2
+
+models:
+  - name: int_facebook_ads__currency_normalized
+    description: Facebook Ads insights data with currency normalization and USD conversion using exchange rate data
+    columns:
+      - name: insights_key
+        description: Surrogate key for the grain (date, account_id, campaign_id, ad_id)
+        tests:
+          - not_null
+          - unique
+
+      - name: date_day
+        description: Report date for the advertising metrics
+        tests:
+          - not_null
+
+      - name: account_id
+        description: Facebook Ad Account ID - unique identifier for the advertising account
+        tests:
+          - not_null
+
+      - name: account_name
+        description: Business Manager account name - human-readable account identifier
+        tests:
+          - not_null
+
+      - name: campaign_id
+        description: Facebook Campaign ID - unique identifier for the campaign
+        tests:
+          - not_null
+
+      - name: campaign_name
+        description: Campaign name - human-readable campaign identifier
+        tests:
+          - not_null
+
+      - name: campaign_objective
+        description: Standardized Facebook campaign objective
+        tests:
+          - not_null
+
+      - name: campaign_status
+        description: Current status of the campaign
+        tests:
+          - not_null
+
+      - name: ad_id
+        description: Facebook Ad ID - unique identifier for the individual ad
+        tests:
+          - not_null
+
+      - name: ad_name
+        description: Ad name - human-readable ad identifier
+        tests:
+          - not_null
+
+      - name: impressions
+        description: Number of times the ad was displayed (INT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: true
+
+      - name: clicks
+        description: Number of clicks on the ad (INT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: true
+
+      - name: spend
+        description: Amount spent on the ad in original account currency (FLOAT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: true
+
+      - name: reach
+        description: Number of unique users who saw the ad (INT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: true
+
+      - name: frequency
+        description: Average number of times each user saw the ad (impressions/reach) (FLOAT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: true
+
+      - name: conversions
+        description: Number of purchase conversions attributed to the ad (INT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: true
+
+      - name: conversion_value
+        description: Total value of purchase conversions in original account currency (FLOAT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: true
+
+      - name: cost_per_mille
+        description: Cost per 1000 impressions in original account currency (FLOAT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: true
+
+      - name: cost_per_click
+        description: Average cost per click in original account currency (FLOAT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: true
+
+      - name: click_through_rate
+        description: Click-through rate as percentage (clicks/impressions * 100) (FLOAT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              max_value: 100.0
+              inclusive: true
+
+      - name: cost_per_conversion
+        description: Average cost per conversion in original account currency - null when no conversions (FLOAT64)
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: true
+
+      - name: return_on_ad_spend
+        description: Return on ad spend ratio (conversion_value/spend) - null when no spend (FLOAT64)
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: true
+
+      - name: data_quality_flag
+        description: Data quality validation flag from staging model
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Valid']
+
+      - name: account_currency
+        description: Three-letter currency code for the advertising account (e.g., USD, EUR, GBP)
+        tests:
+          - not_null
+
+      - name: currency_validation_flag
+        description: Currency validation result flag
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Valid Currency']
+
+      - name: enhanced_data_quality_flag
+        description: Enhanced data quality flag combining currency and exchange rate validation
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Valid']
+
+      - name: exchange_rate
+        description: Exchange rate used for USD conversion (foreign currency to USD)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: false
+
+      - name: exchange_rate_date
+        description: Date of the exchange rate used for conversion
+        tests:
+          - not_null
+
+      - name: exchange_rate_source
+        description: Source of the exchange rate data
+        tests:
+          - not_null
+
+      - name: exchange_rate_quality_flag
+        description: Quality indicator for the exchange rate match
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['No Conversion Needed', 'Direct Rate Match', 'Forward Filled Rate']
+
+      - name: spend_original_currency
+        description: Amount spent in the original account currency - same as spend field (FLOAT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: true
+
+      - name: conversion_value_original_currency
+        description: Conversion value in the original account currency - same as conversion_value field (FLOAT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: true
+
+      - name: cost_per_click_original_currency
+        description: Cost per click in the original account currency - same as cost_per_click field (FLOAT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: true
+
+      - name: cost_per_mille_original_currency
+        description: Cost per mille in the original account currency - same as cost_per_mille field (FLOAT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: true
+
+      - name: cost_per_conversion_original_currency
+        description: Cost per conversion in the original account currency - same as cost_per_conversion field (FLOAT64)
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: true
+
+      - name: spend_usd
+        description: Amount spent converted to USD using exchange rates
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: true
+
+      - name: conversion_value_usd
+        description: Conversion value converted to USD using exchange rates
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: true
+
+      - name: cost_per_click_usd
+        description: Cost per click converted to USD using exchange rates
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: true
+
+      - name: cost_per_mille_usd
+        description: Cost per mille converted to USD using exchange rates
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: true
+
+      - name: cost_per_conversion_usd
+        description: Cost per conversion converted to USD using exchange rates
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: true
+
+      - name: _dbt_loaded_at
+        description: Timestamp when the record was processed by dbt
+        tests:
+          - not_null
+
+    tests:
+      # Primary grain uniqueness test
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - date_day
+            - account_id
+            - campaign_id
+            - ad_id
+          name: unique_currency_normalized_grain
+      
+      # Currency validation tests
+      - dbt_utils.expression_is_true:
+          expression: "account_currency is not null and length(account_currency) = 3"
+          name: valid_currency_code_format
+      
+      - dbt_utils.expression_is_true:
+          expression: "currency_validation_flag = 'Valid Currency'"
+          name: only_valid_currencies_in_output
+      
+      - dbt_utils.expression_is_true:
+          expression: "enhanced_data_quality_flag = 'Valid'"
+          name: only_enhanced_valid_records_in_output
+      
+      # Original currency field consistency tests
+      - dbt_utils.expression_is_true:
+          expression: "spend = spend_original_currency"
+          name: spend_consistency_check
+      
+      - dbt_utils.expression_is_true:
+          expression: "conversion_value = conversion_value_original_currency"
+          name: conversion_value_consistency_check
+      
+      - dbt_utils.expression_is_true:
+          expression: "cost_per_click = cost_per_click_original_currency"
+          name: cost_per_click_consistency_check
+      
+      - dbt_utils.expression_is_true:
+          expression: "cost_per_mille = cost_per_mille_original_currency"
+          name: cost_per_mille_consistency_check
+      
+      - dbt_utils.expression_is_true:
+          expression: "(cost_per_conversion is null and cost_per_conversion_original_currency is null) or (cost_per_conversion = cost_per_conversion_original_currency)"
+          name: cost_per_conversion_consistency_check
+      
+      # Business logic validation inherited from staging
+      - dbt_utils.expression_is_true:
+          expression: "clicks <= impressions or impressions = 0"
+          name: clicks_not_exceed_impressions_currency_normalized
+      
+      - dbt_utils.expression_is_true:
+          expression: "reach <= impressions or reach = 0 or impressions = 0"
+          name: reach_not_exceed_impressions_currency_normalized
+
+  - name: int_facebook_ads__daily_metrics
+    description: Enhanced Facebook Ads daily performance metrics with recalculated business metrics and data quality validations
+    columns:
+      - name: insights_key
+        description: Surrogate key for the grain (date, account_id, campaign_id, ad_id)
+        tests:
+          - not_null
+          - unique
+
+      - name: date_day
+        description: Report date for the advertising metrics
+        tests:
+          - not_null
+
+      - name: account_id
+        description: Facebook Ad Account ID - unique identifier for the advertising account
+        tests:
+          - not_null
+
+      - name: account_name
+        description: Business Manager account name - human-readable account identifier
+        tests:
+          - not_null
+
+      - name: campaign_id
+        description: Facebook Campaign ID - unique identifier for the campaign
+        tests:
+          - not_null
+
+      - name: campaign_name
+        description: Campaign name - human-readable campaign identifier
+        tests:
+          - not_null
+
+      - name: campaign_objective
+        description: Standardized Facebook campaign objective
+        tests:
+          - not_null
+
+      - name: campaign_status
+        description: Current status of the campaign
+        tests:
+          - not_null
+
+      - name: ad_id
+        description: Facebook Ad ID - unique identifier for the individual ad
+        tests:
+          - not_null
+
+      - name: ad_name
+        description: Ad name - human-readable ad identifier
+        tests:
+          - not_null
+
+      - name: impressions
+        description: Number of times the ad was displayed (INT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: true
+
+      - name: clicks
+        description: Number of clicks on the ad (INT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: true
+
+      - name: spend
+        description: Amount spent on the ad in account currency (FLOAT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: true
+
+      - name: reach
+        description: Number of unique users who saw the ad (INT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: true
+
+      - name: frequency
+        description: Average number of times each user saw the ad (impressions/reach) (FLOAT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: true
+
+      - name: conversions
+        description: Number of purchase conversions attributed to the ad (INT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: true
+
+      - name: conversion_value
+        description: Total value of purchase conversions in account currency (FLOAT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: true
+
+      - name: click_through_rate
+        description: Click-through rate calculated as (clicks/impressions * 100) (FLOAT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              max_value: 100.0
+              inclusive: true
+
+      - name: cost_per_click
+        description: Average cost per click calculated as (spend/clicks) (FLOAT64)
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: true
+
+      - name: cost_per_mille
+        description: Cost per 1000 impressions calculated as (spend/impressions * 1000) (FLOAT64)
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: true
+
+      - name: conversion_rate
+        description: Conversion rate calculated as (conversions/clicks * 100) (FLOAT64)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              max_value: 100.0
+              inclusive: true
+
+      - name: return_on_ad_spend
+        description: Return on ad spend calculated as (conversion_value/spend) (FLOAT64)
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: true
+
+      - name: cost_per_conversion
+        description: Average cost per conversion calculated as (spend/conversions) (FLOAT64)
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              inclusive: true
+
+      - name: staging_cost_per_click
+        description: Cost per click from staging model for comparison (FLOAT64)
+
+      - name: staging_cost_per_mille
+        description: Cost per mille from staging model for comparison (FLOAT64)
+
+      - name: staging_click_through_rate
+        description: Click through rate from staging model for comparison (FLOAT64)
+
+      - name: staging_cost_per_conversion
+        description: Cost per conversion from staging model for comparison (FLOAT64)
+
+      - name: staging_return_on_ad_spend
+        description: Return on ad spend from staging model for comparison (FLOAT64)
+
+      - name: account_currency
+        description: Three-letter currency code for the advertising account
+        tests:
+          - not_null
+
+      - name: exchange_rate
+        description: Exchange rate used for USD conversion
+        tests:
+          - not_null
+
+      - name: exchange_rate_date
+        description: Date of the exchange rate used for conversion
+        tests:
+          - not_null
+
+      - name: exchange_rate_source
+        description: Source of the exchange rate data
+        tests:
+          - not_null
+
+      - name: exchange_rate_quality_flag
+        description: Quality indicator for the exchange rate match
+        tests:
+          - not_null
+
+      - name: spend_original_currency
+        description: Amount spent in the original account currency
+        tests:
+          - not_null
+
+      - name: conversion_value_original_currency
+        description: Conversion value in the original account currency
+        tests:
+          - not_null
+
+      - name: cost_per_click_original_currency
+        description: Cost per click in the original account currency
+
+      - name: cost_per_mille_original_currency
+        description: Cost per mille in the original account currency
+
+      - name: cost_per_conversion_original_currency
+        description: Cost per conversion in the original account currency
+
+      - name: spend_usd
+        description: Amount spent converted to USD using exchange rates
+        tests:
+          - not_null
+
+      - name: conversion_value_usd
+        description: Conversion value converted to USD using exchange rates
+        tests:
+          - not_null
+
+      - name: cost_per_click_usd
+        description: Cost per click converted to USD using exchange rates
+
+      - name: cost_per_mille_usd
+        description: Cost per mille converted to USD using exchange rates
+
+      - name: cost_per_conversion_usd
+        description: Cost per conversion converted to USD using exchange rates
+
+      - name: enhanced_data_quality_flag
+        description: Enhanced data quality validation flag with additional business logic checks
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Valid', 'Invalid CTR', 'Negative CPC', 'Negative CPM', 'Invalid Conversion Rate', 'Negative ROAS', 'Negative Cost Per Conversion', 'Clicks Exceed Impressions', 'Frequency Calculation Error', 'CPC Calculation Mismatch', 'CPM Calculation Mismatch', 'Missing Key Fields', 'Negative Metrics']
+
+      - name: metric_alert_flag
+        description: Flag indicating metrics that may need attention due to unusually high values
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Normal', 'High CTR', 'High CPC', 'High Conversion Rate', 'High ROAS', 'High Frequency']
+
+      - name: performance_tier
+        description: Performance tier classification based on CTR, conversion rate, and ROAS thresholds
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['High Performer', 'Good Performer', 'Average Performer', 'Poor Performer', 'No Spend']
+
+      - name: _dbt_loaded_at
+        description: Timestamp when the record was processed by dbt
+        tests:
+          - not_null
+
+    tests:
+      # Primary grain uniqueness test
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - date_day
+            - account_id
+            - campaign_id
+            - ad_id
+          name: unique_daily_metrics_grain
+      
+      # Business logic validation tests
+      - dbt_utils.expression_is_true:
+          expression: "clicks <= impressions or impressions = 0"
+          name: clicks_not_exceed_impressions_intermediate
+      
+      - dbt_utils.expression_is_true:
+          expression: "reach <= impressions or reach = 0 or impressions = 0"
+          name: reach_not_exceed_impressions_intermediate
+      
+      - dbt_utils.expression_is_true:
+          expression: "spend >= 0 and clicks >= 0 and impressions >= 0"
+          name: metrics_non_negative_intermediate
+      
+      # Calculated metric consistency tests
+      - dbt_utils.expression_is_true:
+          expression: "click_through_rate = round((clicks / nullif(impressions, 0)) * 100.0, 4) or impressions = 0"
+          name: ctr_calculation_consistent
+      
+      - dbt_utils.expression_is_true:
+          expression: "cost_per_click is null or abs(cost_per_click - (spend / nullif(clicks, 0))) < 0.0001"
+          name: cpc_calculation_consistent
+      
+      - dbt_utils.expression_is_true:
+          expression: "cost_per_mille is null or abs(cost_per_mille - ((spend / nullif(impressions, 0)) * 1000)) < 0.0001"
+          name: cpm_calculation_consistent
+      
+      - dbt_utils.expression_is_true:
+          expression: "conversion_rate = round((conversions / nullif(clicks, 0)) * 100.0, 4) or clicks = 0"
+          name: conversion_rate_calculation_consistent
+      
+      - dbt_utils.expression_is_true:
+          expression: "return_on_ad_spend is null or abs(return_on_ad_spend - (conversion_value / nullif(spend, 0))) < 0.0001"
+          name: roas_calculation_consistent
+      
+      - dbt_utils.expression_is_true:
+          expression: "cost_per_conversion is null or abs(cost_per_conversion - (spend / nullif(conversions, 0))) < 0.0001"
+          name: cost_per_conversion_calculation_consistent
+      
+      # Data quality validation
+      - dbt_utils.expression_is_true:
+          expression: "enhanced_data_quality_flag = 'Valid'"
+          name: only_valid_records_in_intermediate_output

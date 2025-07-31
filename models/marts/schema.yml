@@ -1,0 +1,613 @@
+version: 2
+
+models:
+  - name: facebook_ads__base_spend
+    description: |
+      Essential Facebook Ads spend tracking with core performance metrics at daily ad level.
+      
+      **Business Purpose:** Core spend analysis and ROI tracking for campaign budget management
+      and performance evaluation.
+      
+      **Data Grain:** One record per ad per day
+      
+      **Usage Examples:**
+      - Daily spend analysis and budget tracking
+      - Campaign ROI reporting and optimization
+      - Cost efficiency monitoring across campaigns
+      - Budget allocation planning and forecasting
+      
+      **Data Freshness:** Updated daily with previous day's performance data
+      
+      **Dependencies:** Sources from int_facebook_ads__daily_metrics with enhanced data quality validation
+    
+    columns:
+      - name: date_day
+        description: "Date of the advertising activity (YYYY-MM-DD format)"
+        tests:
+          - not_null
+      
+      - name: campaign_name
+        description: "Name of the Facebook advertising campaign"
+        tests:
+          - not_null
+      
+      - name: ad_name
+        description: "Name of the specific advertisement within the campaign"
+        tests:
+          - not_null
+      
+      - name: impressions
+        description: "Total number of times the ad was displayed to users"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: clicks
+        description: "Total number of clicks received on the advertisement"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: spend
+        description: "Total amount spent on the advertisement in USD"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: conversions
+        description: "Total number of desired actions completed (purchases, sign-ups, etc.)"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: objective
+        description: "Campaign goal or purpose (e.g., conversions, traffic, brand awareness)"
+        tests:
+          - accepted_values:
+              values: ['Lead Generation', 'Conversions', 'Traffic', 'Brand Awareness', 'Reach', 'Video Views', 'Messages', 'App Installs', 'Event Responses', 'Link Clicks', 'Local Awareness', 'Offer Claims', 'Page Likes', 'Post Engagement', 'Product Catalog Sales', 'Store Visits', 'Unknown']
+      
+      - name: account_id
+        description: "Unique identifier for the Facebook Ads account"
+        tests:
+          - not_null
+      
+      - name: click_through_rate
+        description: "Percentage of impressions that resulted in clicks (clicks/impressions * 100)"
+      
+      - name: cost_per_click
+        description: "Average cost paid for each click (spend/clicks)"
+      
+      - name: cost_per_conversion
+        description: "Average cost paid for each conversion (spend/conversions)"
+      
+      - name: return_on_ad_spend
+        description: "Revenue generated per dollar spent on advertising (conversion_value/spend)"
+
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - date_day
+            - account_id
+            - campaign_name
+            - ad_name
+      - dbt_utils.expression_is_true:
+          expression: "clicks <= impressions"
+          config:
+            where: "impressions > 0"
+
+  - name: facebook_ads__ad_performance_daily
+    description: |
+      Daily Facebook Ads performance metrics for analysis and optimization.
+      
+      **Business Purpose:** Performance analysis enabling data driven campaign optimization,
+      A/B testing insights, and reporting across all advertising metrics.
+      
+      **Data Grain:** One record per ad per day with complete metric suite including performance
+      classifications and alert flags.
+      
+      **Usage Examples:**
+      - Performance optimization and campaign tuning
+      - A/B testing analysis and statistical insights
+      - Executive and stakeholder reporting
+      - Performance monitoring and alerting
+      - Cross campaign benchmarking and analysis
+      
+      **Data Freshness:** Updated daily with previous day's performance data
+      
+      **Dependencies:** Sources from int_facebook_ads__daily_metrics with enhanced data quality validation
+    
+    columns:
+      - name: date_day
+        description: "Date of the advertising activity (YYYY-MM-DD format)"
+        tests:
+          - not_null
+      
+      - name: account_id
+        description: "Unique identifier for the Facebook Ads account"
+        tests:
+          - not_null
+      
+      - name: account_name
+        description: "Human-readable name of the Facebook Ads account"
+      
+      - name: campaign_id
+        description: "Unique identifier for the Facebook advertising campaign"
+        tests:
+          - not_null
+      
+      - name: campaign_name
+        description: "Name of the Facebook advertising campaign"
+      
+      - name: campaign_objective
+        description: "Campaign goal or purpose (e.g., conversions, traffic, brand awareness)"
+      
+      - name: campaign_status
+        description: "Current status of the campaign (Active, Paused, etc.)"
+      
+      - name: ad_id
+        description: "Unique identifier for the specific advertisement"
+        tests:
+          - not_null
+      
+      - name: ad_name
+        description: "Name of the specific advertisement within the campaign"
+      
+      - name: impressions
+        description: "Total number of times the ad was displayed to users"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: clicks
+        description: "Total number of clicks received on the advertisement"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: spend
+        description: "Total amount spent on the advertisement in USD"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: reach
+        description: "Number of unique users who saw the advertisement"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: frequency
+        description: "Average number of times each person saw the ad (impressions/reach)"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: conversions
+        description: "Total number of desired actions completed (purchases, sign-ups, etc.)"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: conversion_value
+        description: "Total monetary value of conversions in USD"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: click_through_rate
+        description: "Percentage of impressions that resulted in clicks (clicks/impressions * 100)"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 100
+      
+      - name: cost_per_click
+        description: "Average cost paid for each click (spend/clicks)"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: cost_per_mille
+        description: "Cost per thousand impressions (spend/impressions * 1000)"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: conversion_rate
+        description: "Percentage of clicks that resulted in conversions (conversions/clicks * 100)"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 100
+      
+      - name: return_on_ad_spend
+        description: "Revenue generated per dollar spent on advertising (conversion_value/spend)"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: cost_per_conversion
+        description: "Average cost paid for each conversion (spend/conversions)"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: performance_tier
+        description: "Performance classification based on efficiency metrics and benchmarks"
+        tests:
+          - accepted_values:
+              values: ['High Performer', 'Good Performer', 'Average Performer', 'Poor Performer', 'No Spend']
+      
+      - name: metric_alert_flag
+        description: "Boolean flag indicating if performance metrics require attention or review"
+
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - date_day
+            - account_id
+            - campaign_id
+            - ad_id
+      - dbt_utils.expression_is_true:
+          expression: "clicks <= impressions"
+          config:
+            where: "impressions > 0"
+      - dbt_utils.expression_is_true:
+          expression: "click_through_rate <= 100"
+          config:
+            where: "click_through_rate is not null"
+
+  - name: facebook_ads__campaign_summary
+    description: |
+      Campaign level aggregated performance metrics for analysis and budget optimization.
+      
+      **Business Purpose:** Campaign level aggregated performance metrics for analysis,
+      budget allocation planning, and campaign ROI analysis. Enables cross campaign performance
+      comparison and benchmarking.
+      
+      **Data Grain:** One record per campaign per day with aggregated metrics across all ads
+      within each campaign.
+      
+      **Usage Examples:**
+      - Campaign performance tracking and optimization
+      - Budget allocation planning and forecasting
+      - Campaign ROI analysis and benchmarking
+      - Performance tier distribution analysis
+      - Strategic campaign portfolio management
+      
+      **Data Freshness:** Updated daily with previous day's performance data
+      
+      **Dependencies:** Sources from int_facebook_ads__daily_metrics with enhanced data quality validation
+    
+    columns:
+      - name: date_day
+        description: "Date of the advertising activity (YYYY-MM-DD format)"
+        tests:
+          - not_null
+      
+      - name: account_id
+        description: "Unique identifier for the Facebook Ads account"
+        tests:
+          - not_null
+      
+      - name: account_name
+        description: "Human-readable name of the Facebook Ads account"
+      
+      - name: campaign_id
+        description: "Unique identifier for the Facebook advertising campaign"
+        tests:
+          - not_null
+      
+      - name: campaign_name
+        description: "Name of the Facebook advertising campaign"
+      
+      - name: campaign_objective
+        description: "Campaign goal or purpose (e.g., conversions, traffic, brand awareness)"
+      
+      - name: campaign_status
+        description: "Current status of the campaign (Active, Paused, etc.)"
+      
+      - name: impressions
+        description: "Total number of times campaign ads were displayed to users (aggregated across all ads)"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: clicks
+        description: "Total number of clicks received on campaign ads (aggregated across all ads)"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: spend
+        description: "Total amount spent on the campaign in USD (aggregated across all ads)"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: reach
+        description: "Total number of unique users who saw campaign ads (aggregated across all ads)"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: frequency
+        description: "Average number of times each person saw campaign ads (total_impressions/total_reach)"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: conversions
+        description: "Total number of desired actions completed across campaign ads (purchases, sign-ups, etc.)"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: conversion_value
+        description: "Total monetary value of conversions in USD (aggregated across all ads)"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: click_through_rate
+        description: "Campaign-level percentage of impressions that resulted in clicks (total_clicks/total_impressions * 100)"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 100
+      
+      - name: cost_per_click
+        description: "Campaign-level average cost paid for each click (total_spend/total_clicks)"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: cost_per_mille
+        description: "Campaign-level cost per thousand impressions (total_spend/total_impressions * 1000)"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: conversion_rate
+        description: "Campaign-level percentage of clicks that resulted in conversions (total_conversions/total_clicks * 100)"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 100
+      
+      - name: return_on_ad_spend
+        description: "Campaign-level revenue generated per dollar spent on advertising (total_conversion_value/total_spend)"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: cost_per_conversion
+        description: "Campaign-level average cost paid for each conversion (total_spend/total_conversions)"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: performance_tier
+        description: "Campaign-level performance classification based on aggregated efficiency metrics and benchmarks"
+        tests:
+          - accepted_values:
+              values: ['High Performer', 'Good Performer', 'Average Performer', 'Poor Performer', 'No Spend']
+      
+      - name: efficiency_score
+        description: "Composite metric scoring campaign efficiency based on CTR (30%), conversion rate (30%), and ROAS (40%)"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: active_ads_count
+        description: "Number of distinct active ads within the campaign on this date"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: total_ads
+        description: "Total number of ads that had activity within the campaign on this date"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: high_performer_ads
+        description: "Count of ads classified as 'High Performer' within the campaign on this date"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: good_performer_ads
+        description: "Count of ads classified as 'Good Performer' within the campaign on this date"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: average_performer_ads
+        description: "Count of ads classified as 'Average Performer' within the campaign on this date"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: poor_performer_ads
+        description: "Count of ads classified as 'Poor Performer' within the campaign on this date"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: no_spend_ads
+        description: "Count of ads with no spend within the campaign on this date"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: high_performer_pct
+        description: "Percentage of ads classified as 'High Performer' within the campaign (high_performer_ads/total_ads * 100)"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 100
+      
+      - name: good_performer_pct
+        description: "Percentage of ads classified as 'Good Performer' within the campaign (good_performer_ads/total_ads * 100)"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 100
+      
+      - name: average_performer_pct
+        description: "Percentage of ads classified as 'Average Performer' within the campaign (average_performer_ads/total_ads * 100)"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 100
+      
+      - name: poor_performer_pct
+        description: "Percentage of ads classified as 'Poor Performer' within the campaign (poor_performer_ads/total_ads * 100)"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 100
+      
+      - name: ads_with_alerts
+        description: "Count of ads with performance metric alerts within the campaign on this date"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: alert_rate_pct
+        description: "Percentage of ads with performance alerts within the campaign (ads_with_alerts/total_ads * 100)"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 100
+
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - date_day
+            - campaign_id
+      - dbt_utils.expression_is_true:
+          expression: "clicks <= impressions"
+          config:
+            where: "impressions > 0"
+      - dbt_utils.expression_is_true:
+          expression: "click_through_rate <= 100"
+          config:
+            where: "click_through_rate is not null"
+      - dbt_utils.expression_is_true:
+          expression: "conversion_rate <= 100"
+          config:
+            where: "conversion_rate is not null"
+      - dbt_utils.expression_is_true:
+          expression: "high_performer_ads + good_performer_ads + average_performer_ads + poor_performer_ads + no_spend_ads = total_ads"
+          config:
+            where: "total_ads > 0"
+      - dbt_utils.expression_is_true:
+          expression: "active_ads_count <= total_ads"
+          config:
+            where: "total_ads > 0"
+
+  - name: facebook_ads__audience_metrics
+    description: |
+      Facebook Ads audience performance metrics combining demographics and location data.
+      
+      **Business Purpose:** Audience segmentation analysis and targeting optimization by providing 
+      insights into audience performance across demographics and geographic locations.
+      
+      **Data Grain:** One record per audience segment per day (combining demographics and location data)
+      
+      **Usage Examples:**
+      - Audience segmentation and targeting optimization
+      - Demographics vs location performance comparison  
+      - Reach and frequency analysis by audience segments
+      - Geographic and demographic performance insights
+      - Audience composition and behavior analysis
+      
+      **Data Freshness:** Updated daily with previous day's performance data
+      
+      **Dependencies:** Sources directly from facebook_ads_windsor_audience_demographics and facebook_ads_windsor_audience_location tables
+    
+    columns:
+      - name: date_day
+        description: "Date of the advertising activity (YYYY-MM-DD format)"
+        tests:
+          - not_null
+      
+      - name: audience_type
+        description: "Type of audience segmentation: 'Demographics' or 'Location'"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Demographics', 'Location']
+      
+      - name: primary_segment
+        description: "Primary audience segment - age for demographics, country for location"
+        tests:
+          - not_null
+      
+      - name: secondary_segment
+        description: "Secondary audience segment - gender for demographics, region for location"
+        tests:
+          - not_null
+      
+      - name: impressions
+        description: "Total number of times ads were displayed to this audience segment"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: clicks
+        description: "Total number of clicks received from this audience segment"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: reach
+        description: "Number of unique users reached within this audience segment"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: frequency
+        description: "Average number of times each person in this segment saw the ads"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: click_through_rate
+        description: "Percentage of impressions that resulted in clicks for this audience segment (clicks/impressions * 100)"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 100
+      
+      - name: calculated_frequency
+        description: "Calculated frequency based on impressions/reach, used for validation and quality checks"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      
+      - name: data_quality_flag
+        description: "Data quality validation flag - only 'Valid' records are included in final output"
+        tests:
+          - accepted_values:
+              values: ['Valid']
+
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - date_day
+            - audience_type
+            - primary_segment
+            - secondary_segment
+      - dbt_utils.expression_is_true:
+          expression: "clicks <= impressions"
+          config:
+            where: "impressions > 0"
+      - dbt_utils.expression_is_true:
+          expression: "click_through_rate <= 100"
+          config:
+            where: "click_through_rate is not null"

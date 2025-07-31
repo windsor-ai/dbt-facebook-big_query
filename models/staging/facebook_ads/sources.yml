@@ -1,0 +1,212 @@
+version: 2
+
+sources:
+  - name: raw_data
+    description: Raw Facebook Ads data from Windsor.ai
+    database: windsor-dbt-development
+    schema: raw_data
+    tables:
+      - name: facebook_ads_windsor_campaigns
+        description: Raw Facebook Ads performance data from Windsor.ai integration
+        columns:
+          - name: date
+            description: Report date
+          - name: account_id
+            description: Facebook Ad Account ID
+          - name: account_name
+            description: Business Manager account name
+          - name: account_status
+            description: Facebook Ad Account status
+          - name: account_currency
+            description: Account currency setting
+          - name: campaign_id
+            description: Facebook Campaign ID
+          - name: campaign
+            description: Campaign name
+          - name: campaign_objective
+            description: Facebook campaign objective
+          - name: campaign_status
+            description: Campaign status
+          - name: ad_id
+            description: Facebook Ad ID
+          - name: ad_name
+            description: Ad name
+          - name: impressions
+            description: Number of impressions
+          - name: clicks
+            description: Number of clicks
+          - name: spend
+            description: Amount spent in account currency
+          - name: reach
+            description: Unique users reached
+          - name: frequency
+            description: Average impressions per user
+          - name: cpm
+            description: Cost per 1000 impressions
+          - name: cpc
+            description: Cost per click
+          - name: ctr
+            description: Click-through rate (%)
+          - name: actions_purchase
+            description: Total purchase conversions
+          - name: action_values_purchase
+            description: Total purchase conversion value
+          - name: campaign_bid_strategy
+            description: Campaign bidding strategy
+          - name: campaign_budget_remaining
+            description: Remaining budget for the campaign
+          - name: campaign_buying_type
+            description: Campaign buying type (auction vs reservation)
+          - name: campaign_configured_status
+            description: User-configured campaign status
+          - name: campaign_created_time
+            description: Timestamp when campaign was created
+          - name: campaign_daily_budget
+            description: Daily budget limit for the campaign
+          - name: campaign_effective_status
+            description: Facebook's effective campaign status
+          - name: campaign_lifetime_budget
+            description: Lifetime budget limit for the campaign
+          - name: campaign_special_ad_category
+            description: Special ad category if applicable
+          - name: campaign_spend_cap
+            description: Spend cap limit for the campaign
+          - name: campaign_start_time
+            description: Campaign start time
+          - name: campaign_stop_time
+            description: Campaign stop time
+          - name: objective
+            description: Campaign objective (alternative field)
+          - name: totalcost
+            description: Total cost of the campaign
+
+      - name: facebook_ads_windsor_ads
+        description: Raw Facebook Ads data with ad level details from Windsor.ai integration
+        columns:
+          - name: actor_id
+            description: Facebook Ad Account ID
+          - name: ad_created_time
+            description: Timestamp when ad was created
+          - name: ad_id
+            description: Facebook Ad ID
+          - name: ad_name
+            description: Ad name
+          - name: ad_object_type
+            description: Type of ad object
+          - name: adset_id
+            description: Facebook Ad Set ID
+          - name: status
+            description: Ad status
+          - name: title
+            description: Ad title/headline
+          - name: body
+            description: Ad body text
+          - name: link
+            description: Ad link
+          - name: link_url
+            description: Ad destination URL
+          - name: thumbnail_url
+            description: Ad thumbnail image URL
+          - name: facebook_permalink_url
+            description: Facebook permalink for the ad
+          - name: instagram_permalink_url
+            description: Instagram permalink for the ad
+          - name: website_destination_url
+            description: Website destination URL
+          - name: desktop_feed_standard_preview_url
+            description: Desktop feed preview URL
+          - name: facebook_story_mobile_preview_url
+            description: Facebook story mobile preview URL
+          - name: instagram_standard_preview_url
+            description: Instagram standard preview URL
+          - name: instagram_story_preview_url
+            description: Instagram story preview URL
+          - name: url_tags
+            description: URL tags/parameters
+          - name: source_instagram_media_id
+            description: Source Instagram media ID
+          - name: instagram_actor_id
+            description: Instagram actor ID
+            
+      - name: facebook_ads_windsor_insights
+        description: Raw Facebook Ads performance insights data from Windsor.ai integration
+        config:
+          freshness:
+            warn_after: {count: 7, period: day}
+            error_after: {count: 14, period: day}
+        loaded_at_field: date
+        columns:
+          - name: date
+            description: Report date
+          - name: account_id
+            description: Facebook Ad Account ID
+          - name: account_name
+            description: Business Manager account name
+          - name: campaign_id
+            description: Facebook Campaign ID
+          - name: campaign
+            description: Campaign name
+          - name: campaign_objective
+            description: Facebook campaign objective
+          - name: campaign_status
+            description: Campaign status
+          - name: ad_id
+            description: Facebook Ad ID
+          - name: ad_name
+            description: Ad name
+          - name: impressions
+            description: Number of impressions
+          - name: clicks
+            description: Number of clicks
+          - name: spend
+            description: Amount spent in account currency
+          - name: reach
+            description: Unique users reached
+          - name: frequency
+            description: Average impressions per user
+          - name: cpm
+            description: Cost per 1000 impressions
+          - name: cpc
+            description: Cost per click
+          - name: ctr
+            description: Click-through rate (%)
+          - name: actions_purchase
+            description: Total purchase conversions
+          - name: action_values_purchase
+            description: Total purchase conversion value
+
+      - name: facebook_ads_windsor_audience_location
+        description: Raw Facebook Ads audience location performance data from Windsor.ai integration
+        columns:
+          - name: age
+            description: Age demographic segment
+          - name: gender
+            description: Gender demographic segment
+          - name: date
+            description: Report date
+          - name: clicks
+            description: Number of clicks
+          - name: frequency
+            description: Average impressions per user
+          - name: impressions
+            description: Number of impressions
+          - name: reach
+            description: Unique users reached
+
+      - name: facebook_ads_windsor_audience_demographics
+        description: Raw Facebook Ads audience demographics performance data from Windsor.ai integration
+        columns:
+          - name: country
+            description: Country location
+          - name: region
+            description: Region location
+          - name: date
+            description: Report date
+          - name: clicks
+            description: Number of clicks
+          - name: frequency
+            description: Average impressions per user
+          - name: impressions
+            description: Number of impressions
+          - name: reach
+            description: Unique users reached
