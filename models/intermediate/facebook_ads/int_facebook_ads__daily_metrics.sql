@@ -102,13 +102,13 @@ data_quality_enhanced as (
     case 
       when data_quality_flag != 'Valid' then data_quality_flag
       when click_through_rate > 100.0 then 'Invalid CTR'
-      when cost_per_click < 0 then 'Negative CPC'
-      when cost_per_mille < 0 then 'Negative CPM'
+      when clicks > 0 and (spend / cast(clicks as float64)) < 0 then 'Negative CPC'
+      when impressions > 0 and ((spend / cast(impressions as float64)) * 1000.0) < 0 then 'Negative CPM'
       when conversion_rate > 100.0 then 'Invalid Conversion Rate'
-      when return_on_ad_spend < 0 then 'Negative ROAS'
-      when cost_per_conversion < 0 then 'Negative Cost Per Conversion'
+      when spend > 0 and (conversion_value / spend) < 0 then 'Negative ROAS'
+      when conversions > 0 and (spend / cast(conversions as float64)) < 0 then 'Negative Cost Per Conversion'
       when impressions > 0 and clicks > impressions then 'Clicks Exceed Impressions'
-      when reach > 0 and impressions > 0 and frequency != (impressions / cast(reach as float64)) then 'Frequency Calculation Error'
+      when reach > 0 and impressions > 0 and abs(frequency - (impressions / cast(reach as float64))) > 0.01 then 'Frequency Calculation Error'
       when spend > 0 and cost_per_click is not null and abs(cost_per_click - (spend / nullif(clicks, 0))) > 0.01 then 'CPC Calculation Mismatch'
       when spend > 0 and cost_per_mille is not null and abs(cost_per_mille - ((spend / nullif(impressions, 0)) * 1000)) > 0.01 then 'CPM Calculation Mismatch'
       else 'Valid'
