@@ -25,31 +25,48 @@ Before using this package, you have to integrate Facebook Ads data into BigQuery
 3. Choose BigQuery as a data destination.  
 4. Create and run a destination task for every required table by selecting specific fields. You can use the Report Presets dropdown to automatically select the necessary fields for each model (ad, campaign, location or user).
 
+![Report Presets Example](analysis/docs/windsor_report_presets.png)
+
 ### ✅ Required BigQuery tables
 
 These tables must be created with the field structure defined in the `sources.yml` file:
 
 1. **`facebook_ads_windsor_campaigns`**  
-   *Campaign-level info such as objectives, budgets, and status*
+
+   *Use **Campaign** preset from the Report Presets dropdown*
+
+   *Campaign-level info such as objectives, budgets, and status* 
 
    **Key fields**: `account_id`, `campaign_id`, `campaign_name`, `campaign_objective`, `campaign_status`, `campaign_budget_*`
 
 2. **`facebook_ads_windsor_ads`**  
+
+   *Use **Ad** preset from the Report Presets dropdown*
+
    *Ad creative metadata and configuration*
 
    **Key fields**: `actor_id`, `ad_id`, `ad_name`, `adset_id`, `title`, `body`, `link_url`, `thumbnail_url`
 
 3. **`facebook_ads_windsor_insights`**  
+
+   **Required Fields:** *Account currency, Account ID, Account Name, Action Values Purchase, Actions Purchase, Ad ID, Ad Name, Campaign, Campaign ID, Campaign Objective, Campaign Status, Clicks, CPC, CPM, CTR, Date, Frequency, Impressions, Ad Placement, Reach, Amount Spent, Ad Status.*
+
    *Daily ad performance metrics*
 
    **Key fields**: `date`, `account_id`, `campaign_id`, `ad_id`, `impressions`, `clicks`, `spend`, `actions_purchase`
 
 4. **`facebook_ads_windsor_audience_location`**  
+
+   *Use **User** preset from the Report Presets dropdown*
+
    *Audience performance segmented by demographics (age and gender)*
 
    **Key fields**: `date`, `age`, `gender`, `clicks`, `frequency`, `impressions`, `reach`
 
 5. **`facebook_ads_windsor_audience_demographics`**  
+
+   *Use **Location** preset from the Report Presets dropdown*
+
    *Audience metrics segmented by location (country and region)*
 
    **Key fields**: `date`, `country`, `region`, `clicks`, `frequency`, `impressions`, `reach`
