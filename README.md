@@ -23,7 +23,7 @@ Before using this package, you have to integrate Facebook Ads data into BigQuery
 1. [Sign up](https://onboard.windsor.ai/) for Windsor.ai's free trial.  
 2. Connect your Facebook Ads account(s).  
 3. Choose BigQuery as a data destination.  
-4. Create and run a destination task for every required table by selecting specific fields. You can use the Report Presets dropdown to automatically select the necessary fields for each model (ad, campaign, location or user).
+4. Create and run a destination task for each of the 5 required tables by selecting specific fields. You can use the Report Presets dropdown to automatically select the necessary fields for each model (ad, campaign, location or user).
 
 ![Report Presets Example](analysis/docs/windsor_report_presets.png)
 
